@@ -67,6 +67,26 @@ export async function importDevice(garminRoot: string, config: ArchiveConfig): P
         const exists = manifest.some(item => item.sha256 === source.sha256)
         if (exists) {
           if (sha(await readFile(rawPath)) !== source.sha256) throw new Error(`Archived source changed: ${rawPath}`)
+          if (previous) {
+            const valid = previous.health.filter(item => item.kind !== 'stress' || item.value >= 0 && item.value <= 100)
+            if (valid.length !== previous.health.length) {
+              previous.health = valid
+              await atomicWrite(join(dataDir, 'day.json'), JSON.stringify(previous, null, 2))
+              await atomicWrite(join(dir, 'summary.md'), updateManagedSummary(await readSummary(config.archiveRoot, day), buildFacts(previous, []), null))
+              changed = true
+            }
+          }
+          const missingObservations = decoded.observations.filter(item => dayForInstant(item.timestamp, config.timeZone) === day)
+          if (missingObservations.length && previous && !previous.observations?.length) {
+            previous.observations = missingObservations
+            await atomicWrite(join(dataDir, 'day.json'), JSON.stringify(previous, null, 2))
+            await atomicWrite(join(dir, 'summary.md'), updateManagedSummary(await readSummary(config.archiveRoot, day), buildFacts(previous, []), null))
+            changed = true
+          }
+          if (previous && !await readSummary(config.archiveRoot, day)) {
+            await atomicWrite(join(dir, 'summary.md'), updateManagedSummary(null, buildFacts(previous, []), null))
+            changed = true
+          }
           continue
         }
         if (await stat(rawPath).then(() => true).catch(() => false)) {
@@ -76,9 +96,11 @@ export async function importDevice(garminRoot: string, config: ArchiveConfig): P
           if (sha(await readFile(`${rawPath}.tmp`)) !== source.sha256) throw new Error('Archive copy failed verification')
           await rename(`${rawPath}.tmp`, rawPath)
         }
-        const data: DayData = previous ?? { schemaVersion: 1, day, activities: [], health: [], sources: [], coverage: [] }
+        const data: DayData = previous ?? { schemaVersion: 1, day, activities: [], health: [], sources: [], coverage: [], observations: [] }
         data.activities.push(...decoded.activities.filter(activity => dayForInstant(activity.startedAt, config.timeZone) === day || (Date.parse(activity.startedAt) < Date.parse(`${day}T23:59:59Z`) && Date.parse(activity.startedAt) + activity.durationSeconds * 1000 >= Date.parse(`${day}T00:00:00Z`))))
         data.health.push(...decoded.health.filter(item => dayForInstant(item.timestamp, config.timeZone) === day))
+        data.observations ??= []
+        data.observations.push(...decoded.observations.filter(item => dayForInstant(item.timestamp, config.timeZone) === day))
         data.coverage.push(...decoded.coverage)
         data.sources.push(source)
         await atomicWrite(join(dataDir, 'day.json'), JSON.stringify(data, null, 2))

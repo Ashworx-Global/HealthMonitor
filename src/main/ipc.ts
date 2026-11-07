@@ -1,4 +1,5 @@
 import { isAbsolute } from 'node:path'
+import { stat } from 'node:fs/promises'
 import type { ArchiveConfig, ImportReport } from '../shared/archive'
 import { dayFolder, listDays, readDay, readSummary } from './archive/read'
 import { loadConfig, saveConfig } from './config'
@@ -29,7 +30,7 @@ export function validateSettings(partial: unknown): Partial<ArchiveConfig> {
 
 export function createBridgeHandlers(userData: string, getWatchRoot: () => Promise<string | null>, getLastReport: () => ImportReport | null) {
   return {
-    async status() { const config = await loadConfig(userData); return { archiveRoot: config.archiveRoot, watchRoot: await getWatchRoot(), lastImport: getLastReport(), cloudSyncConfirmed: false } },
+    async status() { const config = await loadConfig(userData); return { archiveRoot: config.archiveRoot, archiveAvailable: await stat(config.archiveRoot).then(s => s.isDirectory()).catch(() => false), watchRoot: await getWatchRoot(), lastImport: getLastReport(), cloudSyncConfirmed: false } },
     async importNow() { const root = await getWatchRoot(); if (!root) throw new Error('Garmin watch not connected'); return importDevice(root, await loadConfig(userData)) },
     async listDays() { return listDays((await loadConfig(userData)).archiveRoot) },
     async readDay(day: unknown) { return readDay((await loadConfig(userData)).archiveRoot, validateDay(day)) },

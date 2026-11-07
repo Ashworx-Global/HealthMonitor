@@ -13,6 +13,8 @@ export function buildFacts(day: DayData, history: DayData[]): string {
   }
   lines.push('', '## Health and coverage')
   for (const metric of day.health) lines.push(`- ${metric.kind}: ${metric.value} ${metric.unit} (${metric.timestamp})`)
+  const sleepEvents = day.observations?.filter(item => item.kind.startsWith('sleep_level:')) ?? []
+  if (sleepEvents.length) lines.push(`- ${sleepEvents.length} sleep-level events decoded (not a verified total sleep duration).`)
   for (const item of day.coverage) if (item.state !== 'available') lines.push(`- ${item.kind}: ${item.state}${item.reason ? ` — ${item.reason}` : ''}`)
   if (!day.health.length && !day.coverage.length) lines.push('- No verified health metrics in backed-up files.')
   const previous = history.filter(item => item.day < day.day).slice(-7)

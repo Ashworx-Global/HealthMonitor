@@ -30,3 +30,10 @@ it('extracts recognized monitoring metrics only', () => {
   expect(result.health).toEqual(expect.arrayContaining([expect.objectContaining({ kind: 'active_calories', value: 14, unit: 'kcal' })]))
   expect(result.health.find(m => m.kind === 'sleep_minutes')).toBeUndefined()
 })
+it('excludes Garmin negative stress sentinel values from health charts', () => {
+  const bytes = fixture([
+    { num: Profile.MesgNum.STRESS_LEVEL, fields: { stressLevelTime: new Date('2026-11-07T06:00:00Z'), stressLevelValue: -2 } },
+    { num: Profile.MesgNum.STRESS_LEVEL, fields: { stressLevelTime: new Date('2026-11-07T06:01:00Z'), stressLevelValue: 45 } },
+  ])
+  expect(decodeFit(bytes, { ...source, kind: 'Monitor' }).health.filter(h => h.kind === 'stress').map(h => h.value)).toEqual([45])
+})

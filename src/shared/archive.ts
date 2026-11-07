@@ -16,6 +16,6 @@ export interface HealthMetric { kind: string; timestamp: string; value: number; 
 export interface TimestampedObservation { timestamp: string; kind: string; value: number; unit: string }
 export interface DayData {
   schemaVersion: 1; day: string; activities: Activity[]; health: HealthMetric[]
-  sources: SourceRef[]; coverage: Coverage[]
+  sources: SourceRef[]; coverage: Coverage[]; observations?: TimestampedObservation[]
 }
 export interface ImportReport { imported: number; unchanged: number; pending: number; errors: string[] }

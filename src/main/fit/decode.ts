@@ -48,7 +48,7 @@ export function decodeFit(bytes: Uint8Array, source: SourceRef): DecodedFit {
   for (const msg of messages.stressLevelMesgs ?? []) {
     const timestamp = iso(msg.stressLevelTime ?? msg.timestamp)
     const value = number(msg.stressLevelValue)
-    if (timestamp && value !== undefined) health.push({ kind: 'stress', timestamp, value, unit: 'score', sourceHash: source.sha256 })
+    if (timestamp && value !== undefined && value >= 0 && value <= 100) health.push({ kind: 'stress', timestamp, value, unit: 'score', sourceHash: source.sha256 })
   }
   for (const msg of messages.sleepLevelMesgs ?? []) {
     const timestamp = iso(msg.timestamp)

@@ -1,0 +1,13 @@
+appId: local.garmindata.archive
+productName: GarminData
+directories:
+  output: dist
+files:
+  - out/**/*
+  - package.json
+  - node_modules/**/*
+win:
+  target:
+    - portable
+  artifactName: GarminData-${version}-${arch}.${ext}
+asar: true
