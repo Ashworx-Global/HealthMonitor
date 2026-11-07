@@ -76,8 +76,10 @@ async function importDeviceUnlocked(garminRoot: string, config: ArchiveConfig): 
           if (sha(await readFile(rawPath)) !== source.sha256) throw new Error(`Archived source changed: ${rawPath}`)
           if (previous) {
             const valid = previous.health.filter(item => item.kind !== 'stress' || item.value >= 0 && item.value <= 100)
-            if (valid.length !== previous.health.length) {
-              previous.health = valid
+            const knownHealth = new Set(valid.map(item => `${item.sourceHash}|${item.kind}|${item.timestamp}|${item.value}`))
+            const extra = decoded.health.filter(item => dayForInstant(item.timestamp, config.timeZone) === day && !knownHealth.has(`${item.sourceHash}|${item.kind}|${item.timestamp}|${item.value}`))
+            if (valid.length !== previous.health.length || extra.length) {
+              previous.health = [...valid, ...extra]
               await atomicWrite(join(dataDir, 'day.json'), JSON.stringify(previous, null, 2))
               await atomicWrite(join(dir, 'summary.md'), updateManagedSummary(await readSummary(config.archiveRoot, day), buildFacts(previous, []), null))
               changed = true

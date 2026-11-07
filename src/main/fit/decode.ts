@@ -50,6 +50,19 @@ export function decodeFit(bytes: Uint8Array, source: SourceRef): DecodedFit {
     const value = number(msg.stressLevelValue)
     if (timestamp && value !== undefined && value >= 0 && value <= 100) health.push({ kind: 'stress', timestamp, value, unit: 'score', sourceHash: source.sha256 })
   }
+  for (const msg of messages.monitoringHrDataMesgs ?? []) {
+    const timestamp = iso(msg.timestamp)
+    if (!timestamp) continue
+    for (const [field, kind] of [['restingHeartRate', 'resting_heart_rate'], ['currentDayRestingHeartRate', 'current_day_resting_heart_rate']] as const) {
+      const value = number(msg[field])
+      if (value !== undefined && value >= 20 && value <= 250) health.push({ kind, timestamp, value, unit: 'bpm', sourceHash: source.sha256 })
+    }
+  }
+  for (const msg of messages.respirationRateMesgs ?? []) {
+    const timestamp = iso(msg.timestamp)
+    const value = number(msg.respirationRate)
+    if (timestamp && value !== undefined && value > 0 && value <= 100) health.push({ kind: 'respiration_rate', timestamp, value, unit: 'breaths/min', sourceHash: source.sha256 })
+  }
   for (const msg of messages.sleepLevelMesgs ?? []) {
     const timestamp = iso(msg.timestamp)
     if (timestamp && typeof msg.sleepLevel === 'string') observations.push({ timestamp, kind: `sleep_level:${msg.sleepLevel}`, value: 1, unit: 'event' })
@@ -59,7 +72,7 @@ export function decodeFit(bytes: Uint8Array, source: SourceRef): DecodedFit {
     : { kind: 'sleep', state: 'unsupported', reason: 'No verified sleep duration or stages decoded' })
   if (source.kind.toLowerCase() === 'sleep') coverage.push({ kind: 'sleep_duration', state: 'unsupported', reason: 'No verified duration in source' })
   if (health.length) coverage.push({ kind: 'monitoring', state: 'available' })
-  const known = new Set(['fileIdMesgs', 'fileCreatorMesgs', 'sessionMesgs', 'activityMesgs', 'recordMesgs', 'lapMesgs', 'monitoringMesgs', 'monitoringInfoMesgs', 'stressLevelMesgs', 'sleepLevelMesgs'])
+  const known = new Set(['fileIdMesgs', 'fileCreatorMesgs', 'sessionMesgs', 'activityMesgs', 'recordMesgs', 'lapMesgs', 'monitoringMesgs', 'monitoringInfoMesgs', 'monitoringHrDataMesgs', 'stressLevelMesgs', 'respirationRateMesgs', 'sleepLevelMesgs'])
   const unknownMessages = Object.keys(messages).filter(name => !known.has(name))
   return { source, activities, health, observations, coverage, unknownMessages }
 }

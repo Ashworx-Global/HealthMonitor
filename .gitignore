@@ -4,3 +4,7 @@ dist/
 dist-final/
 dist-release/
 coverage/
+.superpowers/
+.DS_Store
+Thumbs.db
+*.log

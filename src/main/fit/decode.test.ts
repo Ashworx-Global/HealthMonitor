@@ -37,3 +37,17 @@ it('excludes Garmin negative stress sentinel values from health charts', () => {
   ])
   expect(decodeFit(bytes, { ...source, kind: 'Monitor' }).health.filter(h => h.kind === 'stress').map(h => h.value)).toEqual([45])
 })
+it('extracts valid resting heart rate and respiration while excluding negative sentinels', () => {
+  const bytes = fixture([
+    { num: Profile.MesgNum.MONITORING_HR_DATA, fields: { timestamp: new Date('2026-11-07T06:00:00Z'), restingHeartRate: 54, currentDayRestingHeartRate: 58 } },
+    { num: Profile.MesgNum.RESPIRATION_RATE, fields: { timestamp: new Date('2026-11-07T06:01:00Z'), respirationRate: -1 } },
+    { num: Profile.MesgNum.RESPIRATION_RATE, fields: { timestamp: new Date('2026-11-07T06:02:00Z'), respirationRate: 15 } },
+  ])
+  const health = decodeFit(bytes, { ...source, kind: 'Monitor' }).health
+  expect(health).toEqual(expect.arrayContaining([
+    expect.objectContaining({ kind: 'resting_heart_rate', value: 54, unit: 'bpm' }),
+    expect.objectContaining({ kind: 'current_day_resting_heart_rate', value: 58, unit: 'bpm' }),
+    expect.objectContaining({ kind: 'respiration_rate', value: 15, unit: 'breaths/min' }),
+  ]))
+  expect(health.filter(h => h.kind === 'respiration_rate').map(h => h.value)).toEqual([15])
+})
