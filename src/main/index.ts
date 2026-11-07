@@ -11,7 +11,7 @@ let tray: Tray | null = null
 let quitting = false
 let lastReport: ImportReport | null = null
 function createWindow(): void {
-  window = new BrowserWindow({ width: 1200, height: 800, webPreferences: { preload: join(__dirname, '../preload/index.js'), contextIsolation: true, nodeIntegration: false, sandbox: false } })
+  window = new BrowserWindow({ width: 1200, height: 800, webPreferences: { preload: join(__dirname, '../preload/index.mjs'), contextIsolation: true, nodeIntegration: false, sandbox: false } })
   if (process.env.ELECTRON_RENDERER_URL) void window.loadURL(process.env.ELECTRON_RENDERER_URL)
   else void window.loadFile(join(__dirname, '../renderer/index.html'))
   window.on('close', event => { if (!quitting && tray) { event.preventDefault(); window?.hide() } })

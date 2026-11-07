@@ -1,3 +1,5 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
-createRoot(document.getElementById('root')!).render(<React.StrictMode><main><h1>GarminData</h1></main></React.StrictMode>)
+import App from './App'
+import './styles.css'
+createRoot(document.getElementById('root')!).render(<React.StrictMode><App /></React.StrictMode>)
