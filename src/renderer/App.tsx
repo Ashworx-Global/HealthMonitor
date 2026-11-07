@@ -7,8 +7,8 @@ import { activitySeries, healthSeries } from './metrics'
 interface Status { archiveRoot: string; archiveAvailable: boolean; watchRoot: string | null; lastImport: ImportReport | null; cloudSyncConfirmed: false }
 interface DashboardProps { days: DayData[]; selected: DayData | null; summary: string | null; status: Status | null; error: string | null; onSelect: (day: string) => void; onImport: () => void; onSettings?: () => void }
 export function Dashboard({ days, selected, summary, status, error, onSelect, onImport, onSettings }: DashboardProps) {
-  const distance = days.reduce((sum, day) => sum + day.activities.reduce((n, a) => n + (a.distanceMeters ?? 0), 0), 0) / 1000
-  const activities = days.reduce((sum, day) => sum + day.activities.length, 0)
+  const distance = activitySeries(days).reduce((sum, point) => sum + (point.value ?? 0), 0)
+  const activities = new Set(days.flatMap(day => day.activities.map(activity => `${activity.sport}|${activity.startedAt}`))).size
   const heart = healthSeries(days, 'stress')
   const latest = days[0]?.day
   return <div className="app-shell">

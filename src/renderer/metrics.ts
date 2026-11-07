@@ -1,10 +1,16 @@
 import type { DayData } from '../shared/archive'
 export interface ChartPoint { day: string; value: number | null }
 export function activitySeries(days: DayData[]): ChartPoint[] {
-  return [...days].sort((a, b) => a.day.localeCompare(b.day)).map(day => ({
-    day: day.day,
-    value: Math.round(day.activities.reduce((sum, a) => sum + (a.distanceMeters ?? 0), 0) / 10) / 100,
-  }))
+  const seen = new Set<string>()
+  return [...days].sort((a, b) => a.day.localeCompare(b.day)).map(day => {
+    const distance = day.activities.reduce((sum, activity) => {
+      const key = `${activity.sport}|${activity.startedAt}`
+      if (seen.has(key)) return sum
+      seen.add(key)
+      return sum + (activity.distanceMeters ?? 0)
+    }, 0)
+    return { day: day.day, value: Math.round(distance / 10) / 100 }
+  })
 }
 export function healthSeries(days: DayData[], metric: string): ChartPoint[] {
   return [...days].sort((a, b) => a.day.localeCompare(b.day)).map(day => {
