@@ -30,6 +30,15 @@ it('archives original bytes, daily JSON and manifest and skips re-import', async
   expect((await importDevice(device, config)).unchanged).toBe(1)
   expect((await readdir(join(day, 'raw'))).length).toBe(1)
 })
+it('serializes simultaneous automatic and manual imports without duplicating a ride', async () => {
+  const { device, config } = await setup(); await putRide(device); await mkdir(config.archiveRoot, { recursive: true })
+  const other = join(device, '..', 'second-device'); await mkdir(join(other, 'GARMIN', 'Activity'), { recursive: true })
+  await putRide(other, 'other.fit', '2026-11-07T09:15:29Z')
+  await Promise.all([importDevice(device, config), importDevice(other, config)])
+  const data = JSON.parse(await readFile(join(config.archiveRoot, '2026', '11', '07', 'data', 'day.json'), 'utf8'))
+  expect(data.activities).toHaveLength(2)
+  expect(data.sources).toHaveLength(2)
+})
 it('archives a ride that crosses local midnight in both days', async () => {
   const { device, config } = await setup(); await putRide(device, 'overnight.fit', '2026-11-07T21:30:00Z'); await mkdir(config.archiveRoot, { recursive: true })
   await importDevice(device, config)

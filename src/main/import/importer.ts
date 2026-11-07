@@ -18,7 +18,14 @@ async function atomicWrite(path: string, bytes: string | Uint8Array): Promise<vo
   catch (error) { await import('node:fs/promises').then(fs => fs.rm(temp, { force: true })); throw error }
 }
 
-export async function importDevice(garminRoot: string, config: ArchiveConfig): Promise<ImportReport> {
+let importQueue: Promise<void> = Promise.resolve()
+export function importDevice(garminRoot: string, config: ArchiveConfig): Promise<ImportReport> {
+  const run = importQueue.then(() => importDeviceUnlocked(garminRoot, config))
+  importQueue = run.then(() => {}, () => {})
+  return run
+}
+
+async function importDeviceUnlocked(garminRoot: string, config: ArchiveConfig): Promise<ImportReport> {
   const report: ImportReport = { imported: 0, unchanged: 0, pending: 0, errors: [] }
   await mkdir(config.stagingRoot, { recursive: true })
   const found = await discoverFitFiles(garminRoot)
