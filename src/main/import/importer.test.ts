@@ -26,6 +26,7 @@ it('archives original bytes, daily JSON and manifest and skips re-import', async
   expect((await readdir(join(day, 'raw'))).length).toBe(1)
   expect((await readdir(join(day, 'data'))).length).toBe(1)
   expect(JSON.parse(await readFile(join(day, 'data', 'day.json'), 'utf8')).activities[0].sport).toBe('cycling')
+  expect(await readFile(join(day, 'summary.md'), 'utf8')).toContain('12.00 km')
   expect((await importDevice(device, config)).unchanged).toBe(1)
   expect((await readdir(join(day, 'raw'))).length).toBe(1)
 })

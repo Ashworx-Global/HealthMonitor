@@ -4,8 +4,11 @@ import { basename, dirname, join, relative, sep } from 'node:path'
 import type { ArchiveConfig, DayData, ImportReport, SourceRef } from '../../shared/archive'
 import { decodeFit } from '../fit/decode'
 import { dayForInstant, daysForFit } from '../fit/day'
-import { dayFolder, readDay } from '../archive/read'
+import { dayFolder, listDays, readDay, readSummary } from '../archive/read'
 import { discoverFitFiles } from './discover'
+import { buildFacts } from '../summary/facts'
+import { requestInsights } from '../summary/ai'
+import { updateManagedSummary } from '../summary/write'
 
 const sha = (bytes: Uint8Array): string => createHash('sha256').update(bytes).digest('hex')
 async function atomicWrite(path: string, bytes: string | Uint8Array): Promise<void> {
@@ -80,6 +83,11 @@ export async function importDevice(garminRoot: string, config: ArchiveConfig): P
         data.sources.push(source)
         await atomicWrite(join(dataDir, 'day.json'), JSON.stringify(data, null, 2))
         await atomicWrite(manifestPath, JSON.stringify([...manifest, source], null, 2))
+        const previousDays = (await listDays(config.archiveRoot)).filter(d => d < day).slice(0, 7)
+        const history = (await Promise.all(previousDays.map(d => readDay(config.archiveRoot, d)))).filter((item): item is DayData => item !== null)
+        const facts = buildFacts(data, history)
+        const insights = await requestInsights(data, history, config.ai)
+        await atomicWrite(join(dir, 'summary.md'), updateManagedSummary(await readSummary(config.archiveRoot, day), facts, insights))
         changed = true
       }
       if (changed) report.imported++; else report.unchanged++
