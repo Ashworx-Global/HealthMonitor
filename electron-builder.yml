@@ -1,11 +1,11 @@
 appId: local.garmindata.archive
 productName: GarminData
 directories:
-  output: dist
+  output: dist-release
 files:
   - out/**/*
   - package.json
-  - node_modules/**/*
+compression: normal
 win:
   target:
     - portable

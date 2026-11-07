@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-Keep the app running in the tray to import on plug-in, or choose **Launch at login** from the tray menu. Use **Import watch** for a manual scan. Change archive root, local timezone and optional AI service via **Settings**. The device letter is discovered by its GARMIN directory, not hardcoded. To package: `npm run build` then `npm run dist:win`; the portable Windows executable is under `dist/`.
+Keep the app running in the tray to import on plug-in, or choose **Launch at login** from the tray menu. Use **Import watch** for a manual scan. Change archive root, local timezone and optional AI service via **Settings**. The device letter is discovered by its GARMIN directory, not hardcoded. To package: `npm run build` then `npm run dist:win`; the portable Windows executable is under `dist-release/`.
 
 For an explicit read-only watch verification and import, run `npm run import:verify -- "E:\" "G:\My Drive\GarminData" "Africa/Johannesburg"` with your actual watch drive and IANA timezone. It hashes watch FIT files before and after import. Do not run this command against an untrusted device or a wrong destination.
 
